@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Nombres Aleatorios</title>
+</head>
+
+<body>
+    <h1>Generador de Nombres Aleatorios</h1>
+    <button id="generarNombres">Generar 10 Nombres Aleatorios</button>
+    <table id="tablaUsuarios">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Edad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- La lista de usuarios generada por JavaScript se mostrará aquí -->
+        </tbody>
+    </table>
+
+    <script>
+        const tablaUsuarios = document.getElementById('tablaUsuarios');
+        const generarNombres = document.getElementById('generarNombres');
+        const apiUrl = 'https://u-site.app/prueba/api.php'; // URL de la API
+
+        // Función para cargar la lista de usuarios
+        function cargarUsuarios() {
+            // Hacer una solicitud AJAX para obtener la lista de usuarios
+            fetch(apiUrl + '?action=list')
+                .then(response => response.json())
+                .then(data => {
+                    // Limpiar la tabla
+                    tablaUsuarios.querySelector('tbody').innerHTML = '';
+
+                    // Iterar sobre los usuarios y mostrarlos en la tabla
+                    data.forEach(usuario => {
+                        const fila = document.createElement('tr');
+                        fila.innerHTML = `
+                            <td>${usuario.id}</td>
+                            <td>${usuario.nombre}</td>
+                            <td>${usuario.apellido}</td>
+                            <td>${usuario.edad}</td>
+                            <td>
+                                <button onclick="editarUsuario(${usuario.id})">Editar</button>
+                                <button onclick="eliminarUsuario(${usuario.id})">Eliminar</button>
+                            </td>
+                        `;
+                        tablaUsuarios.querySelector('tbody').appendChild(fila);
+                    });
+                });
+        }
+
+        // Función para generar nombres aleatorios
+        function generarNombresAleatorios() {
+            // Hacer una solicitud AJAX para agregar 10 usuarios aleatorios
+            for (let i = 0; i < 10; i++) {
+                fetch(apiUrl, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        cargarUsuarios(); // Recargar la lista de usuarios después de agregar
+                    });
+            }
+        }
+
+        // Función para editar un usuario
+        function editarUsuario(id) {
+            const nuevoNombre = prompt("Ingresa el nuevo nombre del usuario:");
+            const nuevoApellido = prompt("Ingresa el nuevo apellido del usuario:");
+            const nuevaEdad = parseInt(prompt("Ingresa la nueva edad del usuario:"));
+
+            if (nuevoNombre && nuevoApellido && !isNaN(nuevaEdad)) {
+                const usuarioActualizado = {
+                    nombre: nuevoNombre,
+                    apellido: nuevoApellido,
+                    edad: nuevaEdad
+                };
+
+                actualizarUsuario(id, usuarioActualizado);
+            } else {
+                alert("Por favor, ingresa información válida.");
+            }
+        }
+
+        // Función para actualizar un usuario
+        function actualizarUsuario(id, datosUsuario) {
+            fetch(apiUrl, {
+                method: 'POST', // Utilizamos POST para la actualización
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=update&id=${id}&nombre=${datosUsuario.nombre}&apellido=${datosUsuario.apellido}&edad=${datosUsuario.edad}`,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.mensaje === "Usuario actualizado exitosamente") {
+                        alert("Usuario actualizado exitosamente.");
+                        cargarUsuarios(); // Recargar la lista de usuarios después de actualizar
+                    } else {
+                        alert("Error al actualizar el usuario.");
+                    }
+                })
+                .catch(error => {
+                    alert("Error al actualizar el usuario: " + error.message);
+                });
+        }
+
+
+        // Función para eliminar un usuario
+        function eliminarUsuario(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
+
+                // Realizar una solicitud AJAX para eliminar el usuario
+                fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=delete&id=${id}`,
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error("Error en la solicitud.");
+                    })
+                    .then(data => {
+                        if (data.mensaje === "Usuario eliminado exitosamente") {
+                            alert("Usuario eliminado exitosamente.");
+                            cargarUsuarios(); // Recargar la lista de usuarios después de eliminar
+                        } else {
+                            alert("Error al eliminar el usuario.");
+                            cargarUsuarios(); // Recargar la lista de usuarios después de eliminar
+                        }
+                    })
+                    .catch(error => {
+                        alert("Error al eliminar el usuario: " + error.message);
+                        cargarUsuarios(); // Recargar la lista de usuarios después de eliminar
+                    });
+            }
+        }
+
+
+        // Asociar el evento de hacer clic al botón "Generar Nombres Aleatorios"
+        generarNombres.addEventListener('click', generarNombresAleatorios);
+
+        // Cargar la lista de usuarios al cargar la página
+        cargarUsuarios();
+    </script>
+</body>
+
+</html>
